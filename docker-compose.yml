@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: retail
+      POSTGRES_PASSWORD: retail
+      POSTGRES_DB: retail
+    ports:
+      - "5552:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retail"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  metabase:
+    image: metabase/metabase:v0.56.6
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MB_DB_TYPE: h2
+      JAVA_OPTS: "-Xmx1g"
+    ports:
+      - "3001:3000"
+    volumes:
+      - metabase:/metabase-data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+volumes:
+  pgdata:
+  metabase:
